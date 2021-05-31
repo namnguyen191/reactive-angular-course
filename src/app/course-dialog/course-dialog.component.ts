@@ -16,13 +16,14 @@ import { throwError } from 'rxjs';
 import { CoursesService } from '../services/courses.service';
 import { LoadingService } from '../loading/loading.service';
 import { MessagesService } from '../messages/messages.service';
+import { CoursesStore } from '../services/courses.store';
 
 @Component({
   // tslint:disable-next-line: component-selector
   selector: 'course-dialog',
   templateUrl: './course-dialog.component.html',
   styleUrls: ['./course-dialog.component.css'],
-  providers: [LoadingService, MessagesService],
+  providers: [MessagesService],
 })
 export class CourseDialogComponent implements AfterViewInit {
   form: FormGroup;
@@ -33,9 +34,8 @@ export class CourseDialogComponent implements AfterViewInit {
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<CourseDialogComponent>,
     @Inject(MAT_DIALOG_DATA) course: Course,
-    private coursesService: CoursesService,
-    private loadingService: LoadingService,
-    private messagesService: MessagesService
+    private messagesService: MessagesService,
+    private coursesStore: CoursesStore
   ) {
     this.course = course;
 
@@ -52,23 +52,9 @@ export class CourseDialogComponent implements AfterViewInit {
   save() {
     const changes = this.form.value;
 
-    const saveCourses$ = this.coursesService
-      .saveCourse(this.course.id, changes)
-      .pipe(
-        catchError((err) => {
-          const message = 'Could not save course';
-          console.log(message, err);
-          this.messagesService.showErrors(message);
+    this.coursesStore.saveCourse(this.course.id, changes).subscribe();
 
-          return throwError(err);
-        })
-      );
-
-    this.loadingService
-      .showLoaderUntilCompleted(saveCourses$)
-      .subscribe((val) => {
-        this.dialogRef.close(val);
-      });
+    this.dialogRef.close(changes);
   }
 
   close() {
